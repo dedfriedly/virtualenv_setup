@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# Function used to ask user for input and provide defaults
 ask() {
     # http://djm.me/ask
     local prompt default REPLY
@@ -89,7 +90,7 @@ if [[ $(pip list) != *virtualenvwrapper* ]]; then
 fi
 
 echo "#############################"
-echo "Make sure virtualenvwrapper installed"
+echo "Make sure giturlparse installed"
 echo "Ref:  https://github.com/FriendCode/giturlparse.py"
 echo ""
 if [[ $(pip list) != *giturlparse.py* ]]; then
