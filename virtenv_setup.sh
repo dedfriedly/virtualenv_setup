@@ -47,6 +47,10 @@ case $key in
     GITHUB_LOC="$2"
     shift # past argument
     ;;
+    -s|--setup)
+    SETUP_ONLY="1"
+    shift # past argument
+    ;;
     -h|--help)
     printf "Command wrapper is to setup the virtual env for a python project and clone the github info\n\n\t-g <github location>:\tGithub location to clone"
     shift # past argument
@@ -65,9 +69,11 @@ done
 #    echo PROJ_NAME is set but empty
 #    exit 1
 #fi
+   
 if [ -z ${GITHUB_LOC+x} ]; then
     echo 'Github clone location not provided with -g|--github'
-    exit 1
+elif [ -z "${SETUP_ONLY}" ]; then
+    echo "Setup only option passed"
 elif [ -z "$GITHUB_LOC" -a "${GITHUB_LOC+xxx}" = "xxx" ]; then
     echo GITHUB_LOC is set but empty
     exit 1
@@ -269,34 +275,35 @@ echo ""
 ##}
 ##
 ##EOF
+if [ -z ${GITHUB_LOC+x} ]; then
+	echo ""
+	echo "virtualenvwrapper setup, using mkproject for the github repo into this local dir:  $PROJECT_HOME"
+	STR='import giturlparse;uri="'"$GITHUB_LOC"'";res=giturlparse.parse(uri); print res.data["repo"]'
+	REPO=`python -c "$STR"`
+	echo "mkproject $REPO"
+	mkproject $REPO
+	source `which virtualenvwrapper.sh`
+	toggleglobalsitepackages
 
-echo ""
-echo "virtualenvwrapper setup, using mkproject for the github repo into this local dir:  $PROJECT_HOME"
-STR='import giturlparse;uri="'"$GITHUB_LOC"'";res=giturlparse.parse(uri); print res.data["repo"]'
-REPO=`python -c "$STR"`
-echo "mkproject $REPO"
-mkproject $REPO
-source `which virtualenvwrapper.sh`
-toggleglobalsitepackages
+	echo ""
+	echo "Git clone the project provided into the local project directory:  $PROJECT_HOME/$REPO"
+	cd $PROJECT_HOME
+	STR='import giturlparse;uri="'"$GITHUB_LOC"'";res=giturlparse.parse(uri); print res.data["protocol"]'
+	REQ_PROTOCOL=`python -c "$STR"`
+	STR='import giturlparse;uri="'"$GITHUB_LOC"'";res=giturlparse.parse(uri); print res.urls["ssh"]'
+	GITHUB_LOC_SSH=`python -c "$STR"`
+	if [ $REQ_PROTOCOL = 'ssh' ]; then
+	    echo "Nice, you're using ssh"
+	    echo "Just FYI, if you haven't setup your clients ssh keys for your profile.  Tip, create passwordless key to make git clones from github easier"
+	    echo "NOTE:  https://stackoverflow.com/questions/8588768/git-push-username-password-how-to-avoid/"
+	else
+	    echo "Requested github clone protocol is not SSH, instead string is:  $REQ_PROTOCOL"
+	    echo "I'm auto swtiching this to SSH, using this url: $GITHUB_LOC_SSH"
+	fi
 
-echo ""
-echo "Git clone the project provided into the local project directory:  $PROJECT_HOME/$REPO"
-cd $PROJECT_HOME
-STR='import giturlparse;uri="'"$GITHUB_LOC"'";res=giturlparse.parse(uri); print res.data["protocol"]'
-REQ_PROTOCOL=`python -c "$STR"`
-STR='import giturlparse;uri="'"$GITHUB_LOC"'";res=giturlparse.parse(uri); print res.urls["ssh"]'
-GITHUB_LOC_SSH=`python -c "$STR"`
-if [ $REQ_PROTOCOL = 'ssh' ]; then
-    echo "Nice, you're using ssh"
-    echo "Just FYI, if you haven't setup your clients ssh keys for your profile.  Tip, create passwordless key to make git clones from github easier"
-    echo "NOTE:  https://stackoverflow.com/questions/8588768/git-push-username-password-how-to-avoid/"
-else
-    echo "Requested github clone protocol is not SSH, instead string is:  $REQ_PROTOCOL"
-    echo "I'm auto swtiching this to SSH, using this url: $GITHUB_LOC_SSH"
+	git clone $GITHUB_LOC_SSH
+	toggleglobalsitepackages
 fi
-
-git clone $GITHUB_LOC_SSH
-toggleglobalsitepackages
 
 echo "TODO:  read django project settings.py for env vars and append pre/post deployment virtualenv"
 
