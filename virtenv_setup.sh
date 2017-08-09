@@ -73,6 +73,46 @@ elif [ -z "$GITHUB_LOC" -a "${GITHUB_LOC+xxx}" = "xxx" ]; then
     exit 1
 fi
 
+# New Step 1, check if pip is installed
+echo "#############################"
+echo "Making sure system has pip installed"
+echo ""
+if ! type pip > /dev/null; then
+    if [[ $EUID -ne 0 ]]; then
+        echo "Running pip install with sudo b/c we're not root"
+        if [ -n "$(command -v yum)" ]; then
+            sudo yum install pip
+        elif [ -n "$(command -v apt-get)" ]; then
+            sudo apt-get install pip
+        elif [ -n "$(command -v brew)" ]; then
+            echo "Ok looks like we're on Mac and no pip installed yo, going thru the more manual pip setup process"
+            curl -O https://bootstrap.pypa.io/get-pip.py
+            sudo -H python get-pip.py
+            rm get-pip.py
+        else
+            echo "Not a yum or apt-get or brew supported system"
+        fi
+    else
+        echo "Running pip install b/c we're root"
+        if [ -n "$(command -v yum)" ]; then yum install pip
+        elif [ -n "$(command -v apt-get)" ]; then apt-get install pip
+        elif [ -n "$(command -v brew)" ]; then 
+            echo "Ok looks like we're on Mac and no pip installed yo, going thru the more manual pip setup process"
+            curl -O https://bootstrap.pypa.io/get-pip.py
+            python get-pip.py
+            rm get-pip.py
+        else
+            echo "Not a yum or apt-get or brew supported system"
+        fi
+    fi
+fi
+
+# Test if pip was actually installed
+if ! type pip > /dev/null; then
+    echo "Error: pip not actually installed, bailing"
+    exit 1
+fi
+
 # Step 1, required pip packages
 echo "#############################"
 echo "Make sure virtualenvwrapper installed"
@@ -80,9 +120,12 @@ echo "Ref:  http://virtualenvwrapper.readthedocs.io/en/latest/index.html"
 echo ""
 if [[ $(pip list) != *virtualenvwrapper* ]]; then
     echo "virtualenvwrapper doesn't appear to be installed"
-    if [[ $EUID -ne 0 ]]; then
+    if [ -n "$(command -v brew)" ]; then
+        echo "Running Mac OS sudo pip install virtualwrapper"
+        sudo -H pip install --upgrade virtualenvwrapper --ignore-installed six
+    elif [[ $EUID -ne 0 ]]; then
         echo "Running AS SUDO: pip install virtualenvwrapper"
-        sudo pip install virtualenvwrapper
+        sudo -H pip install virtualenvwrapper
     else
         echo "Running: pip install virtualenvwrapper"
         pip install virtualenvwrapper
@@ -97,7 +140,7 @@ if [[ $(pip list) != *giturlparse.py* ]]; then
     echo "giturlparse.py doesn't appear to be installed"
     if [[ $EUID -ne 0 ]]; then
         echo "Running AS SUDO: pip install giturlparse.py"
-        sudo pip install giturlparse.py
+        sudo -H pip install giturlparse.py
     else
         echo "Running: pip install giturlparse.py"
         pip install giturlparse.py
@@ -115,15 +158,18 @@ if ! type git > /dev/null; then
             sudo yum install git
         elif [ -n "$(command -v apt-get)" ]; then
             sudo apt-get install git
+        elif [ -n "$(command -v brew)" ]; then
+	    brew install git
         else
-            echo "Not a yum or apt-get supported system"
+            echo "Not a yum or apt-get or brew supported system"
         fi
     else
         echo "Running git install b/c we're root"
         if [ -n "$(command -v yum)" ]; then yum install git
         elif [ -n "$(command -v apt-get)" ]; then apt-get install git
+	elif [ -n "$(command -v apt-get)" ]; then brew install git
         else
-            echo "Not a yum or apt-get supported system"
+            echo "Not a yum or apt-get or brew supported system"
         fi
     fi
 fi
