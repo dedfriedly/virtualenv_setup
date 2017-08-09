@@ -275,7 +275,7 @@ echo ""
 ##}
 ##
 ##EOF
-if [ -z ${GITHUB_LOC+x} ]; then
+if [ ! -z ${GITHUB_LOC+x} ]; then
 	echo ""
 	echo "virtualenvwrapper setup, using mkproject for the github repo into this local dir:  $PROJECT_HOME"
 	STR='import giturlparse;uri="'"$GITHUB_LOC"'";res=giturlparse.parse(uri); print res.data["repo"]'
