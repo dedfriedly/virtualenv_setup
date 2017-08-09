@@ -69,12 +69,7 @@ done
 #    echo PROJ_NAME is set but empty
 #    exit 1
 #fi
-   
-if [ -z ${GITHUB_LOC+x} ]; then
-    echo 'Github clone location not provided with -g|--github'
-elif [ -z "${SETUP_ONLY}" ]; then
-    echo "Setup only option passed"
-elif [ -z "$GITHUB_LOC" -a "${GITHUB_LOC+xxx}" = "xxx" ]; then
+if [ -z "$GITHUB_LOC" -a "${GITHUB_LOC+xxx}" = "xxx" ]; then
     echo GITHUB_LOC is set but empty
     exit 1
 fi
